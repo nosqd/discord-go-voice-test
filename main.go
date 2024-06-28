@@ -1,9 +1,6 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
@@ -43,28 +40,13 @@ func main() {
 		return
 	}
 
-	data, err := os.ReadFile("bebra.pcm")
-	if err != nil {
-		fmt.Println("error reading file,", err)
-		return
-	}
-
-	opusEncoder, err := gopus.NewEncoder(frameRate, channels, gopus.Audio)
-
-	buf := bufio.NewReaderSize(bytes.NewReader(data), 16384)
+	_, err = gopus.NewEncoder(frameRate, channels, gopus.Audio)
 
 	_ = vc.Speaking(true)
 
 	for {
-		audiobuf := make([]int16, frameSize*channels)
-		err = binary.Read(buf, binary.LittleEndian, &audiobuf)
-
-		opus, err := opusEncoder.Encode(audiobuf, frameSize, maxBytes)
-		if err != nil {
-			return
-		}
-
-		vc.OpusSend <- opus
+		p := <-vc.OpusRecv
+		vc.OpusSend <- p.Opus
 	}
 
 }
